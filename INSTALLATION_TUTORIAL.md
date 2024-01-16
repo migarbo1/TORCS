@@ -345,3 +345,9 @@ For completitude, we display here our `default.xml` corresponding to have an F1 
     </section>
 </params>
 ```
+
+After that, you will need to modify the `/usr/local/share/games/torcs/drivers/scr_server/scr_server.xml` file, replacing the car name of the first scr_server to 'car1-ow1'. Finally, change the ownership of all the created and modified files to 'root:root' it can be done with:
+
+```sh
+sudo chown root:root [file/s]
+```
