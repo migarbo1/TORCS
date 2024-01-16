@@ -20,6 +20,12 @@ We may need also to install `freeGlut`, so:
 
 ```sudo apt-get install freeglut3 freeglut3-dev```
 
+And, in order to automatically select competition modes, we need the xautomation module. It can be installed using:
+
+```sh
+sudo apt-get install xautomation
+```
+
 Finally, for some more modern linux versions (+18.0.0), we may need to install also `PLIB`. In that case we will need also the following packages:
 
 ```sudo apt-get install libxmu-dev libxmu6 libxi-dev```
