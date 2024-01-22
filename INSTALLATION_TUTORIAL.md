@@ -14,11 +14,15 @@ The files can be found [here](https://sourceforge.net/projects/torcs/files/lates
 
 ### 2. Install torcs dependencies
 
-```sudo apt-get install mesa-utils libalut-dev libvorbis-dev cmake libxrender-dev libxrender1 libxrandr-dev zlib1g-dev libpng-dev libxxf86vm-dev```
+```sh
+sudo apt-get install mesa-utils libalut-dev libvorbis-dev cmake libxrender-dev libxrender1 libxrandr-dev zlib1g-dev libpng-dev libxxf86vm-dev
+```
 
 We may need also to install `freeGlut`, so:
 
-```sudo apt-get install freeglut3 freeglut3-dev```
+```sh
+sudo apt-get install freeglut3 freeglut3-dev
+```
 
 And, in order to automatically select competition modes, we need the xautomation module. It can be installed using:
 
@@ -28,7 +32,9 @@ sudo apt-get install xautomation
 
 Finally, for some more modern linux versions (+18.0.0), we may need to install also `PLIB`. In that case we will need also the following packages:
 
-```sudo apt-get install libxmu-dev libxmu6 libxi-dev```
+```sh
+sudo apt-get install libxmu-dev libxmu6 libxi-dev
+```
 
 ### 3. Install PLIB (if needed)
 
