@@ -60,7 +60,7 @@ typedef struct sockaddr_in tSockAddrIn;
 /*** defines for UDP *****/
 #define UDP_LISTEN_PORT 3001
 #define UDP_ID "SCR"
-#define UDP_DEFAULT_TIMEOUT 10000
+#define UDP_DEFAULT_TIMEOUT 50000
 #define UDP_MSGLEN 1000
 //#define __UDP_SERVER_VERBOSE__
 /************************/
