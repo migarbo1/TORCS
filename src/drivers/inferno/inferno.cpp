@@ -82,6 +82,9 @@ static const tdble waitToTurn = 1.0; // How long should i wait till i try to tur
 // MIGUEL: add sensor and track angle lists
 static float trackSensAngle[BOTS][19];
 static Sensors *trackSens[BOTS];
+static tTrack	*curTrack;
+static tdble prevDist[BOTS];
+static tdble distRaced[BOTS];
 
 // Release resources when the module gets unloaded.
 static void shutdown(int index) {
@@ -104,6 +107,7 @@ static void shutdown(int index) {
 // Initialize track data, called for every selected driver.
 static void initTrack(int index, tTrack* track, void *carHandle, void **carParmHandle, tSituation * situation)
 {
+	curTrack = track;
 	if ((myTrackDesc != NULL) && (myTrackDesc->getTorcsTrack() != track)) {
 		delete myTrackDesc;
 		myTrackDesc = NULL;
@@ -183,6 +187,9 @@ static void newRace(int index, tCarElt* car, tSituation *situation)
     for (int i = 0; i < 19; ++i) {
     	trackSens[index]->setSensor(i,trackSensAngle[index][i],200);
 	}
+
+	//Miguel:
+	prevDist[index]=-1;
 
 }
 
@@ -524,18 +531,38 @@ void createObs(int index, tCarElt* car, tSituation *s){
         }
     }
 
+	// distRaced
+	if (prevDist[index]<0)
+    {
+	prevDist[index] = car->race.distFromStartLine;
+    }
+    float curDistRaced = car->race.distFromStartLine - prevDist[index];
+    prevDist[index] = car->race.distFromStartLine;
+    if (curDistRaced>100)
+    {
+	curDistRaced -= curTrack->length;
+    }
+    if (curDistRaced<-100)
+    {
+	curDistRaced += curTrack->length;
+    }
+
+    distRaced[index] += curDistRaced;
+
 	// create output object
 
 	string stateString;
 
 	stateString =  SimpleParser::stringify("angle", angle);
-	stateString += SimpleParser::stringify("speedX", sp_x);
-	stateString += SimpleParser::stringify("speedY", sp_y);
-	stateString += SimpleParser::stringify("speedZ", sp_z);
-	stateString += SimpleParser::stringify("track", trackSensorOut, 19);
-    stateString += SimpleParser::stringify("Steer", car->_steerCmd);
-    stateString += SimpleParser::stringify("Brake", car->_brakeCmd);
-    stateString += SimpleParser::stringify("Accel", car->_accelCmd);
+	stateString += "," + SimpleParser::stringify("speedX", sp_x);
+	stateString += "," + SimpleParser::stringify("speedY", sp_y);
+	stateString += "," + SimpleParser::stringify("speedZ", sp_z);
+	stateString += "," + SimpleParser::stringify("trackPos", dist_to_middle);
+	stateString += "," + SimpleParser::stringify("track", trackSensorOut, 19);
+	stateString += "," + SimpleParser::stringify("distRaced", distRaced[index]);
+    stateString += "," + SimpleParser::stringify("Steer", car->_steerCmd);
+    stateString += "," + SimpleParser::stringify("Brake", car->_brakeCmd);
+    stateString += "," + SimpleParser::stringify("Accel", car->_accelCmd);
 
 	std::cout << stateString << std::endl;
 
