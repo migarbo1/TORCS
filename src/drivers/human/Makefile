@@ -24,7 +24,7 @@ MODULEDIR = drivers/${ROBOT}
 
 LIBS      =  -lplibul
 
-SOURCES   = ${ROBOT}.cpp pref.cpp
+SOURCES   = ${ROBOT}.cpp pref.cpp SimpleParser.cpp sensors.cpp
 
 SHIPDIR   = drivers/${ROBOT}
 

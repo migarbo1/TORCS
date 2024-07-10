@@ -47,6 +47,11 @@
 #include "pref.h"
 #include "human.h"
 
+// MIGUEL
+#include "sensors.h"
+#include <iostream> 
+#include "SimpleParser.h"
+
 #define DRWD 0
 #define DFWD 1
 #define D4WD 2
@@ -71,6 +76,12 @@ tHumanContext *HCtx[10] = {0};
 
 static int speedLimiter	= 0;
 static tdble Vtarget;
+
+// MIGUEL: add sensor and track angle lists
+static float trackSensAngle[10][19];
+static Sensors *trackSens[10];
+static tdble prevDist[10];
+static tdble distRaced[10];
 
 
 typedef struct
@@ -374,6 +385,29 @@ void newrace(int index, tCarElt* car, tSituation *s)
 		HCtx[idx]->autoClutch = 1;
 	else
 		HCtx[idx]->autoClutch = 0;
+
+
+	// MIGUEL: set track sensors angles evenly
+	for (int i = 0; i < 19; ++i) {
+		trackSensAngle[index][i] = -90 + 10.0*i;
+		std::cout << "trackSensAngle[" << i << "] " << trackSensAngle[index][i] << std::endl;
+	}
+
+	// MIGUEL: set track sensors to focus
+	// float focusSens[19] = {-45.0, -32.0, -23.0, -11.0, -7.0, -4.0, -2.8, -1.5, -.5, 0.0, .5, 1.5, 2.8, 4.0, 7.0, 11.0, 23.0, 32.0, 45.0};// 
+
+	// for(int i = 0; i<19; i++){
+	// 	trackSensAngle[index][i] = focusSens[i];
+	// }
+
+	// MIGUEL: initialize track sensors with the previous angles
+	trackSens[index] = new Sensors(car, 19);
+    for (int i = 0; i < 19; ++i) {
+    	trackSens[index]->setSensor(i,trackSensAngle[index][i],200);
+	}
+
+	//Miguel:
+	prevDist[index]=-1;
 }
 
 static void
@@ -1015,6 +1049,76 @@ static void drive_mt(int index, tCarElt* car, tSituation *s)
 	if (HCtx[idx]->autoClutch && car->_clutchCmd == 0.0f)
 		car->_clutchCmd = getAutoClutch(idx, car->_gear, car->_gearCmd, car);
 
+
+
+
+	// MIGUEL: call obsevation creation method 
+	// trackPos
+	float dist_to_middle = 2*car->_trkPos.toMiddle/(car->_trkPos.seg->width);
+
+	// angle
+	float angle =  RtTrackSideTgAngleL(&(car->_trkPos)) - car->_yaw;
+    NORM_PI_PI(angle);
+
+	// speed
+	float sp_x = float(car->_speed_x  * 3.6);
+    float sp_y = float(car->_speed_y  * 3.6);
+    float sp_z = float(car->_speed_z  * 3.6);
+
+	// track
+    float trackSensorOut[19];
+    if (dist_to_middle<=1.0 && dist_to_middle >=-1.0 )
+    {
+        trackSens[index]->sensors_update();
+		for (int i = 0; i < 19; ++i)
+        {
+            trackSensorOut[i] = trackSens[index]->getSensorOut(i);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 19; ++i)
+        {
+            trackSensorOut[i] = -1;
+        }
+    }
+
+	// distRaced
+	if (prevDist[index]<0)
+    {
+	prevDist[index] = car->race.distFromStartLine;
+    }
+    float curDistRaced = car->race.distFromStartLine - prevDist[index];
+    prevDist[index] = car->race.distFromStartLine;
+    if (curDistRaced>100)
+    {
+	curDistRaced -= curTrack->length;
+    }
+    if (curDistRaced<-100)
+    {
+	curDistRaced += curTrack->length;
+    }
+
+    distRaced[index] += curDistRaced;
+
+	// create output object
+
+	string stateString;
+
+	stateString =  SimpleParser::stringify("angle", angle);
+	stateString += "," + SimpleParser::stringify("speedX", sp_x);
+	stateString += "," + SimpleParser::stringify("speedY", sp_y);
+	stateString += "," + SimpleParser::stringify("speedZ", sp_z);
+	stateString += "," + SimpleParser::stringify("trackPos", dist_to_middle);
+	stateString += "," + SimpleParser::stringify("track", trackSensorOut, 19);
+	stateString += "," + SimpleParser::stringify("distRaced", distRaced[index]);
+    stateString += "," + SimpleParser::stringify("Steer", car->_steerCmd);
+    stateString += "," + SimpleParser::stringify("Brake", car->_brakeCmd);
+    stateString += "," + SimpleParser::stringify("Accel", car->_accelCmd);
+
+	std::cout << stateString << std::endl;
+
+
 }
 /*
  * Function
@@ -1136,6 +1240,74 @@ static void drive_at(int index, tCarElt* car, tSituation *s)
 
 	if (HCtx[idx]->autoClutch && car->_clutchCmd == 0.0f)
 	    car->_clutchCmd = getAutoClutch(idx, car->_gear, car->_gearCmd, car);
+
+
+	// MIGUEL: call obsevation creation method 
+	// trackPos
+	float dist_to_middle = 2*car->_trkPos.toMiddle/(car->_trkPos.seg->width);
+
+	// angle
+	float angle =  RtTrackSideTgAngleL(&(car->_trkPos)) - car->_yaw;
+    NORM_PI_PI(angle);
+
+	// speed
+	float sp_x = float(car->_speed_x  * 3.6);
+    float sp_y = float(car->_speed_y  * 3.6);
+    float sp_z = float(car->_speed_z  * 3.6);
+
+	// track
+    float trackSensorOut[19];
+    if (dist_to_middle<=1.0 && dist_to_middle >=-1.0 )
+    {
+        trackSens[index]->sensors_update();
+		for (int i = 0; i < 19; ++i)
+        {
+            trackSensorOut[i] = trackSens[index]->getSensorOut(i);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 19; ++i)
+        {
+            trackSensorOut[i] = -1;
+        }
+    }
+
+	// distRaced
+	if (prevDist[index]<0)
+    {
+	prevDist[index] = car->race.distFromStartLine;
+    }
+    float curDistRaced = car->race.distFromStartLine - prevDist[index];
+    prevDist[index] = car->race.distFromStartLine;
+    if (curDistRaced>100)
+    {
+	curDistRaced -= curTrack->length;
+    }
+    if (curDistRaced<-100)
+    {
+	curDistRaced += curTrack->length;
+    }
+
+    distRaced[index] += curDistRaced;
+
+	// create output object
+
+	string stateString;
+
+	stateString =  SimpleParser::stringify("angle", angle);
+	stateString += "," + SimpleParser::stringify("speedX", sp_x);
+	stateString += "," + SimpleParser::stringify("speedY", sp_y);
+	stateString += "," + SimpleParser::stringify("speedZ", sp_z);
+	stateString += "," + SimpleParser::stringify("trackPos", dist_to_middle);
+	stateString += "," + SimpleParser::stringify("track", trackSensorOut, 19);
+	stateString += "," + SimpleParser::stringify("distRaced", distRaced[index]);
+    stateString += "," + SimpleParser::stringify("Steer", car->_steerCmd);
+    stateString += "," + SimpleParser::stringify("Brake", car->_brakeCmd);
+    stateString += "," + SimpleParser::stringify("Accel", car->_accelCmd);
+
+	std::cout << stateString << std::endl;
+
 }
 
 static int pitcmd(int index, tCarElt* car, tSituation *s)
